@@ -35,6 +35,7 @@ const config = {
         HTML_SAMI: true,
         HTML_VTT: true,
         HTML_SRT: true,
+        TOOLS_MCP: true,
         // TODO
         // EME: true,
         // BIF: true,
