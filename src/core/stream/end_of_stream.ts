@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Observable } from "rxjs/Observable";
+import { Observable } from "rxjs";
 import { retryFuncWithBackoff } from "../../utils/retry";
 
 /**
@@ -39,5 +39,5 @@ export default function triggerEndOfStreamWithRetries(
   };
 
   return retryFuncWithBackoff(() => triggerEndOfStream(mediaSource), retryOptions)
-    .ignoreElements() as Observable<never>;
+    .ignoreElements();
 }

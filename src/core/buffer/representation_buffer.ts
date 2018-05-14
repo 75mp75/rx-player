@@ -15,8 +15,11 @@
  */
 
 import objectAssign = require("object-assign");
-import { Observable } from "rxjs/Observable";
-import { ReplaySubject } from "rxjs/ReplaySubject";
+import {
+  EMPTY,
+  Observable,
+  ReplaySubject,
+} from "rxjs";
 import Manifest, {
   Adaptation,
   ISegment,
@@ -292,7 +295,7 @@ export default function RepresentationBuffer<T>({
         if (currentNeededSegment == null) {
           // queue is finished...
           currentSegmentRequest = null;
-          return Observable.empty();
+          return EMPTY;
         }
         const { segment, priority } = currentNeededSegment;
         const initSegmentInfos = initSegmentObject && initSegmentObject.segmentInfos;
@@ -338,7 +341,7 @@ export default function RepresentationBuffer<T>({
       if (segmentData == null) {
         // no segmentData to add here (for example, a text init segment)
         // just complete directly without appending anything
-        return Observable.empty();
+        return EMPTY;
       }
 
       const initSegmentData = initSegmentObject && initSegmentObject.segmentData;
