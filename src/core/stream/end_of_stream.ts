@@ -15,6 +15,7 @@
  */
 
 import { Observable } from "rxjs";
+import { ignoreElements } from "rxjs/operators";
 import { retryFuncWithBackoff } from "../../utils/retry";
 
 /**
@@ -39,5 +40,5 @@ export default function triggerEndOfStreamWithRetries(
   };
 
   return retryFuncWithBackoff(() => triggerEndOfStream(mediaSource), retryOptions)
-    .ignoreElements();
+    .pipe(ignoreElements());
 }

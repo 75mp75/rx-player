@@ -15,9 +15,19 @@
  */
 
 import {
+  combineLatest as observableCombineLatest,
+  merge as observableMerge,
   Observable,
+  of as observableOf,
   Subject,
 } from "rxjs";
+import {
+  finalize,
+  map,
+  mapTo,
+  mergeMap,
+  take,
+} from "rxjs/operators";
 import config from "../../config";
 import log from "../../utils/log";
 import throttle from "../../utils/rx-throttle";
@@ -185,7 +195,7 @@ export default function Stream({
     new WeakMapMemory((qSourceBuffer : QueuedSourceBuffer<any>) =>
       BufferGarbageCollector({
         queuedSourceBuffer: qSourceBuffer,
-        clock$: clock$.map(tick => tick.currentTime),
+        clock$: clock$.pipe(map(tick => tick.currentTime)),
         maxBufferBehind$,
         maxBufferAhead$,
       })
@@ -205,19 +215,19 @@ export default function Stream({
    * Start the whole Stream.
    * @type {Observable}
    */
-  const stream$ = createMediaSource(videoElement)
-    .mergeMap(mediaSource => {
-      return Observable.combineLatest(
+  const stream$ = createMediaSource(videoElement).pipe(
+    mergeMap(mediaSource => {
+      return observableCombineLatest(
         fetchManifest(url),
-        onSourceOpen$(mediaSource).take(1)
-      ).mergeMap(([manifest]) => {
+        onSourceOpen$(mediaSource).pipe(take(1))
+      ).pipe(mergeMap(([manifest]) => {
         return initializeStream(mediaSource, manifest);
-      });
-    });
+      }));
+    }));
 
-  const warningEvents$ = warning$.map(EVENTS.warning);
+  const warningEvents$ = warning$.pipe(map(EVENTS.warning));
 
-  return Observable.merge(stream$, warningEvents$);
+  return observableMerge(stream$, warningEvents$);
 
   /**
    * Initialize stream playback by merging all observable that are required to
@@ -280,8 +290,8 @@ export default function Stream({
      * Clock needed by the BufferManager
      * @type {Observable}
      */
-    const abrClock$ = Observable.combineLatest(clock$, speed$)
-      .map(([tick, speed]) => {
+    const abrClock$ = observableCombineLatest(clock$, speed$).pipe(
+      map(([tick, speed]) => {
         return {
           bufferGap: tick.bufferGap,
           duration: tick.duration,
@@ -289,7 +299,7 @@ export default function Stream({
           position: tick.currentTime,
           speed,
         };
-      });
+      }));
 
     /**
      * Creates BufferManager allowing to easily create a Buffer linked to any
@@ -324,13 +334,13 @@ export default function Stream({
         textTrackOptions,
       },
       warning$
-    ).mergeMap(function onBuffersHandlerEvent(evt) {
+    ).pipe(mergeMap(function onBuffersHandlerEvent(evt) {
       if (evt.type === "end-of-stream") {
         log.info("Triggering end of stream.");
         return triggerEndOfStreamWithRetries(mediaSource);
       }
-      return Observable.of(evt);
-    });
+      return observableOf(evt);
+    }));
 
     /**
      * Add management of events linked to live Playback.
@@ -338,7 +348,7 @@ export default function Stream({
      */
     const buffers$ = (manifest.isLive ?
       handledBuffers$
-        .mergeMap(liveEventsHandler(videoElement, manifest, fetchManifest)) :
+        .pipe(mergeMap(liveEventsHandler(videoElement, manifest, fetchManifest))) :
       handledBuffers$);
 
     /**
@@ -363,7 +373,7 @@ export default function Stream({
      */
     const speedManager$ = SpeedManager(videoElement, speed$, clock$, {
       pauseWhenStalled: true,
-    }).map(EVENTS.speedChanged);
+    }).pipe(map(EVENTS.speedChanged));
 
     /**
      * Create Stalling Manager, an observable which will try to get out of
@@ -371,14 +381,13 @@ export default function Stream({
      * @type {Observable}
      */
     const stallingManager$ = StallingManager(videoElement, clock$)
-      .map(EVENTS.stalled);
+      .pipe(map(EVENTS.stalled));
 
     // Single lifecycle events
-    const manifestReadyEvent$ = Observable
-      .of(EVENTS.manifestReady(abrManager, manifest));
-    const loadedEvent$ = loadAndPlay$.mapTo(EVENTS.loaded());
+    const manifestReadyEvent$ = observableOf(EVENTS.manifestReady(abrManager, manifest));
+    const loadedEvent$ = loadAndPlay$.pipe(mapTo(EVENTS.loaded()));
 
-    return Observable.merge(
+    return observableMerge(
       manifestReadyEvent$,
       loadedEvent$,
       buffers$,
@@ -386,10 +395,10 @@ export default function Stream({
       mediaErrorHandler$ as Observable<any>, // TODO RxJS Bug?
       speedManager$,
       stallingManager$
-    ).finally(() => {
+    ).pipe(finalize(() => {
       // clean-up every created SourceBuffers
       sourceBufferManager.disposeAll();
-    });
+    }));
   }
 }
 
