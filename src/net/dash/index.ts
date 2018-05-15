@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Observable } from "rxjs/Observable";
+import { of as observableOf } from "rxjs";
 import {
   getMDHDTimescale,
   parseSidx,
@@ -85,7 +85,7 @@ export default function(
       const data = typeof response.responseData === "string" ?
         new DOMParser().parseFromString(response.responseData, "text/xml") :
         response.responseData;
-      return Observable.of({
+      return observableOf({
         manifest: dashManifestParser(data, url/*, contentProtectionParser*/),
         url: response.url,
       });
@@ -120,7 +120,7 @@ export default function(
       const sidxSegments = parseSidx(segmentData, indexRange ? indexRange[0] : 0);
 
       if (!segment.isInit) {
-        return Observable.of({
+        return observableOf({
           segmentData,
           segmentInfos: getISOBMFFTimingInfos(segment, segmentData, sidxSegments, init),
         });
@@ -131,7 +131,7 @@ export default function(
         addNextSegments(representation, nextSegments);
       }
       const timescale = getMDHDTimescale(segmentData);
-      return Observable.of({
+      return observableOf({
         segmentData,
         segmentInfos: timescale > 0 ? { time: -1, duration: 0, timescale } : null,
       });
@@ -149,7 +149,7 @@ export default function(
     ) : ILoaderObservable<ArrayBuffer|null> {
       if (segment.isInit) {
         // image do not need an init segment. Passthrough directly to the parser
-        return Observable.of({
+        return observableOf({
           type: "data" as "data",
           value: { responseData: null },
         });
@@ -167,7 +167,7 @@ export default function(
       const responseData = response.responseData;
 
       if (responseData === null) {
-        return Observable.of({
+        return observableOf({
           segmentData: null,
           segmentInfos: segment.timescale > 0 ? {
             duration: segment.isInit ? 0 : segment.duration,
@@ -179,7 +179,7 @@ export default function(
 
       const bifObject = parseBif(new Uint8Array(responseData));
       const data = bifObject.thumbs;
-      return Observable.of({
+      return observableOf({
         segmentData: {
           data,
           start: 0,
