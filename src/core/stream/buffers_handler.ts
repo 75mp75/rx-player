@@ -16,6 +16,7 @@
 
 import {
   combineLatest as observableCombineLatest,
+  concat as observableConcat,
   merge as observableMerge,
   Observable,
   of as observableOf,
@@ -24,7 +25,6 @@ import {
 } from "rxjs";
 import {
   catchError,
-  concat,
   distinctUntilChanged,
   exhaustMap,
   filter,
@@ -459,16 +459,14 @@ export default function BuffersHandler(
      * @type {Observable}
      */
     const currentBuffer$ : Observable<IMultiplePeriodBuffersEvent> =
-      observableOf(EVENTS.periodBufferReady(bufferType, basePeriod, adaptation$)).pipe(
-        concat(periodBuffer$),
-        takeUntil(killCurrentBuffer$),
-        concat(
-          observableOf(EVENTS.periodBufferCleared(bufferType, basePeriod)).pipe(
-            tap(() => {
-              log.info("destroying buffer for", bufferType, basePeriod);
-            }))
-        )
-      );
+      observableConcat(
+        observableOf(EVENTS.periodBufferReady(bufferType, basePeriod, adaptation$)),
+        periodBuffer$.pipe(takeUntil(killCurrentBuffer$)),
+        observableOf(EVENTS.periodBufferCleared(bufferType, basePeriod))
+          .pipe(tap(() => {
+            log.info("destroying buffer for", bufferType, basePeriod);
+          }))
+        );
 
     return observableMerge(
       currentBuffer$,
@@ -514,10 +512,9 @@ export default function BuffersHandler(
           cleanBuffer$ = observableOf(null);
         }
 
-        return cleanBuffer$.pipe(
-          mapTo(EVENTS.adaptationChange(bufferType, null, period)),
-          concat(createFakeBuffer(
-            clock$, wantedBufferAhead$, bufferType, { manifest, period }))
+        return observableConcat(
+          cleanBuffer$.pipe(mapTo(EVENTS.adaptationChange(bufferType, null, period))),
+          createFakeBuffer(clock$, wantedBufferAhead$, bufferType, { manifest, period })
         );
       }
 
@@ -581,8 +578,10 @@ export default function BuffersHandler(
       }));
 
       // 5 - Return the buffer and send right events
-      return observableOf(EVENTS.adaptationChange(bufferType, adaptation, period))
-        .pipe(concat(observableMerge(adaptationBuffer$, bufferGarbageCollector$)));
+      return observableConcat(
+        observableOf(EVENTS.adaptationChange(bufferType, adaptation, period)),
+        observableMerge(adaptationBuffer$, bufferGarbageCollector$)
+      );
     }));
   }
 }

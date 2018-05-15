@@ -17,6 +17,7 @@
 import objectAssign = require("object-assign");
 import {
   combineLatest as observableCombineLatest,
+  concat as observableConcat,
   defer as observableDefer,
   EMPTY,
   merge as observableMerge,
@@ -25,7 +26,6 @@ import {
   ReplaySubject,
 } from "rxjs";
 import {
-  concat,
   finalize,
   map,
   mapTo,
@@ -323,9 +323,10 @@ export default function RepresentationBuffer<T>({
         }, priority);
 
         currentSegmentRequest = { segment, priority, request$ };
-        return request$.pipe(
-          map((args) => objectAssign({ segment }, args)),
-          concat(requestNextSegment$)
+        return observableConcat(
+          request$
+            .pipe(map((args) => objectAssign({ segment }, args))),
+          requestNextSegment$
         );
       });
 
@@ -487,8 +488,10 @@ export default function RepresentationBuffer<T>({
 
     return downloadQueueState.type === "idle-buffer" ?
       observableOf(...neededActions) :
-      observableOf(...neededActions)
-        .pipe(concat(observableOf(downloadQueueState)));
+      observableConcat(
+        observableOf(...neededActions),
+        observableOf(downloadQueueState)
+      );
   }
 
   /**
