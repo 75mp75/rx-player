@@ -22,9 +22,9 @@ import {
 import parseBif from "../../parsers/images/bif";
 import createSmoothManifestParser from "../../parsers/manifest/smooth";
 import assert from "../../utils/assert";
+import log from "../../utils/log";
 import request from "../../utils/request";
 import { stringFromUTF8 } from "../../utils/strings";
-import { resolveURL } from "../../utils/url";
 import {
   ILoaderObservable,
   ImageParserObservable,
@@ -45,7 +45,6 @@ import extractTimingsInfos from "./isobmff_timings_infos";
 import mp4Utils from "./mp4";
 import generateSegmentLoader from "./segment_loader";
 import {
-  buildSegmentURL,
   extractISML,
   extractToken,
   replaceToken,
@@ -206,10 +205,12 @@ export default function(
         });
       }
 
+      if (!segment.media) {
+        log.warn("Couldn't load segment" + segment.id + " because no URL is defined.");
+        return Observable.empty();
+      }
       const responseType = isMP4EmbeddedTrack(representation) ? "arraybuffer" : "text";
-      const base = resolveURL(representation.baseURL);
-      const url = buildSegmentURL(base, representation, segment);
-      return request({ url, responseType });
+      return request({ url: segment.media, responseType });
     },
 
     parser({
@@ -354,7 +355,7 @@ export default function(
 
   const imageTrackPipeline = {
     loader(
-      { segment, representation } : ISegmentLoaderArguments
+      { segment } : ISegmentLoaderArguments
     ) : ILoaderObservable<ArrayBuffer|null> {
       if (segment.isInit) {
         // image do not need an init segment. Passthrough directly to the parser
@@ -364,9 +365,11 @@ export default function(
         });
       }
 
-      const baseURL = resolveURL(representation.baseURL);
-      const url = buildSegmentURL(baseURL, representation, segment);
-      return request({ url, responseType: "arraybuffer" });
+      if (!segment.media) {
+        log.warn("Couldn't load segment" + segment.id + " because no URL is defined.");
+        return Observable.empty();
+      }
+      return request({ url: segment.media, responseType: "arraybuffer" });
     },
 
     parser(

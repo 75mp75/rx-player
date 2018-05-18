@@ -39,6 +39,7 @@ import {
   IParsedManifest,
   IRepresentationSmooth,
 } from "../types";
+import { replaceRepresentationSmoothTokens } from "./helpers";
 import RepresentationIndex from "./representationIndex";
 
 interface IHSSManifestSegment {
@@ -454,7 +455,13 @@ function createSmoothStreamingParser(
 
     // apply default properties
     representations.forEach((representation: IRepresentationSmooth) => {
-      representation.baseURL = resolveURL(rootURL, baseURL);
+      const repIndex = {
+        timeline: index.timeline,
+        timescale: index.timescale,
+        initialization: index.initialization,
+        media:
+          replaceRepresentationSmoothTokens(resolveURL(rootURL, baseURL), representation),
+      };
       representation.mimeType =
         representation.mimeType || DEFAULT_MIME_TYPES[adaptationType];
       representation.codecs = representation.codecs || DEFAULT_CODECS[adaptationType];
@@ -470,7 +477,7 @@ function createSmoothStreamingParser(
         samplingRate: representation.samplingRate,
         protection,
       };
-      representation.index = new RepresentationIndex(index, initSegmentInfos);
+      representation.index = new RepresentationIndex(repIndex, initSegmentInfos);
     });
 
     // TODO(pierre): real ad-insert support
