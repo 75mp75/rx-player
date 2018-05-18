@@ -112,6 +112,7 @@ export interface ISegmentParserArguments<T> {
   adaptation : Adaptation;
   representation : Representation;
   segment : ISegment;
+  period: Period;
   init? : ISegmentTimingInfos;
 }
 
@@ -125,7 +126,7 @@ export interface IManifestResult {
 export type IManifestParserObservable = Observable<IManifestResult>;
 
 export type SegmentParserObservable = Observable<{
-  segmentData : Uint8Array|ArrayBuffer|null;
+  segmentData : Uint8Array|ArrayBuffer;
   segmentInfos : ISegmentTimingInfos|null;
 }>;
 
