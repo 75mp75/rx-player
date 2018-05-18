@@ -173,8 +173,10 @@ const configuration = {
 
 Usage :
 
+You must import rx-player package from npm in order to use the media capabilities prober.
+
 ```js
-import { MediaCapabilitiesProber } from "rx-player";
+import MediaCapabilitiesProber from "rx-player/tools/mediaCapabilitiesProber";
 
 const configurationSupport = MediaCapabilitiesProber.getCapabilities(config);
 configurationSupport.then((result) => {

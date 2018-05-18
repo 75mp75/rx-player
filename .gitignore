@@ -12,6 +12,8 @@ tools/tests/coverage/
 dist/*
 !dist/rx-player.js
 !dist/rx-player.min.js
+!dist/tools/mediaCapabilitiesProber/index.js
+!dist/tools/mediaCapabilitiesProber/index.min.js
 test-output.xml
 
 .scannerwork

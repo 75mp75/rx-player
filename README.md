@@ -63,6 +63,7 @@ repository as a dependency. You can do it via npm:
 ```
 npm install --save rx-player
 ```
+/!\ You have to import rx-player package from npm in order to use the [extra tools](./doc/api/index.md#tools).
 
 You can then directly import and use the Rx-Player in your code:
 ```js

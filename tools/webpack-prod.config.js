@@ -6,11 +6,14 @@ const isBarebone = process.env.RXP_BAREBONE === "true";
 
 module.exports = {
   mode: "production",
-  entry: "./src/exports.ts",
+  entry: {
+    "rx-player": "./src/exports.ts",
+    "tools/mediaCapabilitiesProber/index": "./src/tools/mediaCapabilitiesProber/index.ts",
+  },
   output: {
     library: "RxPlayer",
     libraryTarget: "umd",
-    filename: "rx-player.min.js",
+    filename: "[name].min.js",
   },
   optimization: {
     minimizer: [
